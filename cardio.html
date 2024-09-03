@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Кардіограма</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #000;
+            margin: 0;
+            font-family: Arial, sans-serif;
+            color: #fff;
+        }
+        #grid {
+            position: relative;
+            width: 1600px;
+            height: 800px;
+            overflow: hidden;
+        }
+        canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+        button {
+            position: absolute;
+            bottom: 20px;
+            padding: 15px 30px;
+            font-size: 18px;
+            cursor: pointer;
+            background-color: #000000;
+            border-color: #ffffff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            outline: none;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+            transition: background-color 0.3s ease;
+        }
+        button:hover {
+            background-color: #e1d722;
+        }
+    </style>
+</head>
+<body>
+    <div id="grid">
+        <canvas id="cardioCanvas" width="1600" height="800"></canvas>
+    </div>
+    <button id="toggleThemeButton">Змінити фон</button>
+
+    <script>
+        const canvas = document.getElementById('cardioCanvas');
+        const ctx = canvas.getContext('2d');
+        const width = canvas.width;
+        const height = canvas.height;
+
+        let isDarkTheme = true;
+
+        const pulsePatterns = [
+            [
+                { x: 0, y: 0 },
+                { x: 100, y: 0 },
+                { x: 110, y: -200 },
+                { x: 120, y: 0 },
+                { x: 130, y: 100 },
+                { x: 140, y: 0 },
+                { x: 240, y: 0 },
+                { x: 250, y: -200 },
+                { x: 260, y: 0 },
+                { x: 270, y: 100 },
+                { x: 280, y: 0 },
+                { x: 380, y: 0 },
+                { x: 390, y: -200 },
+                { x: 400, y: 0 },
+                { x: 410, y: 100 },
+                { x: 420, y: 0 },
+                { x: 520, y: 0 },
+                { x: 530, y: -200 },
+                { x: 540, y: 0 },
+                { x: 550, y: 100 },
+                { x: 560, y: 0 },
+                { x: 660, y: 0 },
+                { x: 670, y: -200 },
+                { x: 680, y: 0 },
+                { x: 690, y: 100 },
+                { x: 700, y: 0 },
+                { x: 800, y: 0 },
+                { x: 810, y: -200 },
+                { x: 820, y: 0 },
+                { x: 830, y: 100 },
+                { x: 840, y: 0 },
+                { x: 940, y: 0 },
+                { x: 950, y: -200 },
+                { x: 960, y: 0 },
+                { x: 970, y: 100 },
+                { x: 980, y: 0 },
+                { x: 1080, y: 0 },
+                { x: 1090, y: -200 },
+                { x: 1100, y: 0 },
+                { x: 1110, y: 100 },
+                { x: 1120, y: 0 }
+            ],
+            [
+                { x: 0, y: 0 },
+                { x: 100, y: 0 },
+                { x: 110, y: -200 },
+                { x: 120, y: 0 },
+                { x: 130, y: 100 },
+                { x: 140, y: 0 },
+                { x: 240, y: 0 },
+                { x: 250, y: -200 },
+                { x: 260, y: 0 },
+                { x: 270, y: 100 },
+                { x: 280, y: 0 },
+                { x: 380, y: 0 },
+                { x: 390, y: -200 },
+                { x: 400, y: 0 },
+                { x: 410, y: 100 },
+                { x: 420, y: 0 },
+                { x: 520, y: 0 },
+                { x: 530, y: -200 },
+                { x: 540, y: 0 },
+                { x: 550, y: 100 },
+                { x: 560, y: 0 },
+                { x: 660, y: 0 },
+                { x: 670, y: -200 },
+                { x: 680, y: 0 },
+                { x: 690, y: 100 },
+                { x: 700, y: 0 },
+                { x: 800, y: 0 },
+                { x: 810, y: -200 },
+                { x: 820, y: 0 },
+                { x: 830, y: 100 },
+                { x: 840, y: 0 },
+                { x: 940, y: 0 },
+                { x: 950, y: -200 },
+                { x: 960, y: 0 },
+                { x: 970, y: 100 },
+                { x: 980, y: 0 },
+                { x: 1080, y: 0 },
+                { x: 1090, y: -200 },
+                { x: 1100, y: 0 },
+                { x: 1110, y: 100 },
+                { x: 1120, y: 0 }
+            ]
+        ];
+
+        let currentPulsePattern = pulsePatterns[0];
+
+        function centerPulse(pulse) {
+            return pulse.map(p => ({ x: p.x, y: p.y + height / 2 }));
+        }
+
+        let centeredPulse = centerPulse(currentPulsePattern);
+
+        function extendPulse(pulse) {
+            return pulse.concat(
+                pulse.map(p => ({ x: p.x + 1120, y: p.y })),
+                pulse.map(p => ({ x: p.x + 2240, y: p.y }))
+            );
+        }
+
+        let extendedPulse = extendPulse(centeredPulse);
+
+        function drawGrid() {
+            ctx.strokeStyle = isDarkTheme ? '#444' : '#ddd';
+            ctx.lineWidth = 1;
+
+            for (let x = 0; x <= width; x += 20) {
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, height);
+                ctx.stroke();
+            }
+
+            for (let y = 0; y <= height; y += 20) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(width, y);
+                ctx.stroke();
+            }
+        }
+
+        function drawPulse(offset) {
+            ctx.strokeStyle = isDarkTheme ? 'lime' : 'red';
+            ctx.lineWidth = 2;
+
+            for (let i = -1; i < 2; i++) {
+                ctx.beginPath();
+                ctx.moveTo(extendedPulse[0].x - offset + (i * 1120), extendedPulse[0].y);
+
+                for (let j = 1; j < extendedPulse.length; j++) {
+                    ctx.lineTo(extendedPulse[j].x - offset + (i * 1120), extendedPulse[j].y);
+                }
+                ctx.stroke();
+            }
+        }
+
+        function drawHeartRateData() {
+            ctx.fillStyle = isDarkTheme ? 'lime' : 'red';
+            ctx.font = '20px Arial';
+            ctx.fillText(`Heart Rate: ${Math.round(smoothHeartRate.current)} BPM`, 20, 30);
+            ctx.fillText(`Oxygen Level: ${Math.round(smoothOxygenLevel.current)}%`, 20, 60);
+            ctx.fillText(`Blood Pressure: ${Math.round(smoothBloodPressureSys.current)}/${Math.round(smoothBloodPressureDia.current)}`, 20, 90);
+        }
+
+        function createSmoothValue(initialValue) {
+            return { current: initialValue, target: initialValue };
+        }
+
+        const smoothHeartRate = createSmoothValue(Math.floor(Math.random() * 20) + 60);
+        const smoothOxygenLevel = createSmoothValue(Math.floor(Math.random() * 4) + 96);
+        const smoothBloodPressureSys = createSmoothValue(Math.floor(Math.random() * 20) + 110);
+        const smoothBloodPressureDia = createSmoothValue(Math.floor(Math.random() * 10) + 70);
+
+        function updateSmoothValues() {
+            smoothHeartRate.target = Math.floor(Math.random() * 20) + 60;
+            smoothOxygenLevel.target = Math.floor(Math.random() * 4) + 96;
+            smoothBloodPressureSys.target = Math.floor(Math.random() * 20) + 110;
+            smoothBloodPressureDia.target = Math.floor(Math.random() * 10) + 70;
+        }
+
+        function animateSmoothValues() {
+            const smoothingFactor = 0.02;
+            smoothHeartRate.current += (smoothHeartRate.target - smoothHeartRate.current) * smoothingFactor;
+            smoothOxygenLevel.current += (smoothOxygenLevel.target - smoothOxygenLevel.current) * smoothingFactor;
+            smoothBloodPressureSys.current += (smoothBloodPressureSys.target - smoothBloodPressureSys.current) * smoothingFactor;
+            smoothBloodPressureDia.current += (smoothBloodPressureDia.target - smoothBloodPressureDia.current) * smoothingFactor;
+        }
+
+        let offsetX = 0;
+        function animate() {
+            ctx.clearRect(0, 0, width, height);
+            drawGrid();
+            drawPulse(offsetX);
+            drawHeartRateData();
+            offsetX = (offsetX - 2) % 1120;
+            animateSmoothValues();
+            requestAnimationFrame(animate);
+        }
+
+        document.getElementById('toggleThemeButton').addEventListener('click', () => {
+            isDarkTheme = !isDarkTheme;
+            document.body.style.backgroundColor = isDarkTheme ? '#000' : '#fff';
+        });
+
+        setInterval(() => {
+            currentPulsePattern = pulsePatterns[(pulsePatterns.indexOf(currentPulsePattern) + 1) % pulsePatterns.length];
+            centeredPulse = centerPulse(currentPulsePattern);
+            extendedPulse = extendPulse(centeredPulse);
+            updateSmoothValues();
+        }, 5000);
+
+        animate();
+    </script>
+</body>
+</html>
